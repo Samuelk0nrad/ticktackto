@@ -1,3 +1,3 @@
-# BACKEND_NAME_PLACEHOLDER Documentation
+# backend Documentation
 
 This is a template, please fill with content.

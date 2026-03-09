@@ -1,4 +1,4 @@
-from BACKEND_NAME_PLACEHOLDER.model import Entity, Person, User
+from backend.model import Entity, Person, User
 
 ENTITY_ID = 1
 ENTITY_NAME = "Entity 1"

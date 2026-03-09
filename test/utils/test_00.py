@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from BACKEND_NAME_PLACEHOLDER import utils
+from backend import utils
 
 
 def test_00(capfd: pytest.CaptureFixture[str]) -> None:

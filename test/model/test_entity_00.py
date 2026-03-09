@@ -1,4 +1,4 @@
-from BACKEND_NAME_PLACEHOLDER.model import Entity
+from backend.model import Entity
 
 TEST_ID_01 = 1
 TEST_NAME_01 = "TEST ENTITY 1"

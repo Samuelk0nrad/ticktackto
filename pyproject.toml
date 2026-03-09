@@ -8,7 +8,7 @@ requires = [
 [project]
 authors = [ { name = "Robert Ulmer", email = "rulmer@lr.htlweiz.at" } ]
 
-name = "BACKEND_NAME_PLACEHOLDER"
+name = "backend"
 version = "0.0.1"
 description = "Backend description:"
 readme = "README.md"
@@ -44,12 +44,12 @@ dependencies = [
 ]
 
 [project.scripts]
-BACKEND_NAME_PLACEHOLDER_test = "BACKEND_NAME_PLACEHOLDER.utils:test"
-BACKEND_NAME_PLACEHOLDER_user = "BACKEND_NAME_PLACEHOLDER.utils:user_main"
+backend = "backend.utils:test"
+backend = "backend.utils:user_main"
 
 [project.urls]
-"Homepage" = "https://BACKEND_NAME_PLACEHOLDER.com"
-"Documentation" = "https://BACKEND_NAME_PLACEHOLDER.com"
+"Homepage" = "https://backend.com"
+"Documentation" = "https://backend.com"
 
 [project.optional-dependencies]
 lint = [

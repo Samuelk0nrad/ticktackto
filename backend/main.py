@@ -1,3 +1,3 @@
-import BACKEND_NAME_PLACEHOLDER
+import backend
 
-app = BACKEND_NAME_PLACEHOLDER.api.build_app()
+app = backend.api.build_app()

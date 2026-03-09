@@ -1,6 +1,6 @@
 import os
 
-from BACKEND_NAME_PLACEHOLDER.config import Config
+from backend.config import Config
 
 
 def test_config_load_file_01():
