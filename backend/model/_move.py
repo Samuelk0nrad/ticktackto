@@ -17,8 +17,7 @@ class Move(Base):
 
     game_id: Mapped[int] = mapped_column(ForeignKey(column="games.id", ondelete="CASCADE"), nullable=False)
     player_id: Mapped[str] = mapped_column(ForeignKey(column="users.user_name"), nullable=False)
-    position: Mapped[int] = mapped_column(Integer, nullable=False)
-    symbol: Mapped[str] = mapped_column(String(1), nullable=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False) # 1 - 9
     
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     
