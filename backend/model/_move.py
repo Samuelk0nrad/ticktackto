@@ -17,7 +17,8 @@ class Move(Base):
 
     game_id: Mapped[int] = mapped_column(ForeignKey(column="games.id", ondelete="CASCADE"), nullable=False)
     player_id: Mapped[str] = mapped_column(ForeignKey(column="users.user_name"), nullable=False)
-    position: Mapped[int] = mapped_column(Integer, nullable=False) # 1 - 9
+    positionx: Mapped[int] = mapped_column(Integer, nullable=False) # 1 - 3
+    positiony: Mapped[int] = mapped_column(Integer, nullable=False) # 1 - 3
     
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     
@@ -28,6 +29,6 @@ class Move(Base):
     def __repr__(self) -> str:
         return (
             f"Move(id={self.id}, game_id={self.game_id}, "
-            f"player='{self.player_id}', position={self.position}, "
-            f"symbol='{self.symbol}')"
+            f"player='{self.player_id}', positionx={self.positionx}, "
+            f"positiony={self.positiony})"
         )

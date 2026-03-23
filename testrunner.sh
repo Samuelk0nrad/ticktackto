@@ -14,7 +14,7 @@ PYRIGHT_LOG="${TMP_DIR}/pyright.log"
 CODESPELL_LOG="${TMP_DIR}/codespell.log"
 ERROR_LOG="${TMP_DIR}/error.log"
 
-. ./venv/bin/activate
+. ./.venv/bin/activate
 
 animate_sleep() {
   sleep 0.05 || sleep 1

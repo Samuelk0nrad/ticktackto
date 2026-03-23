@@ -21,19 +21,19 @@ class Game(Base):
     __tablename__: str = "games"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    
+
     player_x_id: Mapped[str] = mapped_column(ForeignKey(column="users.user_name"), nullable=False)
     player_o_id: Mapped[str | None] = mapped_column(ForeignKey(column="users.user_name"), nullable=True)
-    
+
     current_player: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default=GameStatus.WAITING.value)
-    
+
     winner_id: Mapped[str | None] = mapped_column(ForeignKey(column="users.user_name"), nullable=True)
-    
+
     created_from: Mapped[str] = mapped_column(ForeignKey(column="users.user_name"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-    
+
     # Relationships
     player_x: Mapped["User"] = relationship(foreign_keys=[player_x_id], back_populates="games_as_x")
     player_o: Mapped["User | None"] = relationship(foreign_keys=[player_o_id], back_populates="games_as_o")

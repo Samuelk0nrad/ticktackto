@@ -44,7 +44,6 @@ dependencies = [
 ]
 
 [project.scripts]
-backend = "backend.utils:test"
 backend = "backend.utils:user_main"
 
 [project.urls]

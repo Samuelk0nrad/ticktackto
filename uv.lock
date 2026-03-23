@@ -42,7 +42,7 @@ wheels = [
 ]
 
 [[package]]
-name = "backend-name-placeholder"
+name = "backend"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
