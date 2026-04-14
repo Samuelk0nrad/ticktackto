@@ -1,7 +1,6 @@
 from sqlalchemy import Engine
 
 from backend.crud._game import GameCRUD
-from backend.schema._game import CreateMoveDTO
 
 class GameService():
     def self(self, engine: Engine):
