@@ -1,125 +1,415 @@
-diff --git a/backend/api/_app.py b/backend/api/_app.py
-index 12d3075..f0c88a7 100644
---- a/backend/api/_app.py
-+++ b/backend/api/_app.py
-@@ -2,7 +2,7 @@ import os
- 
- from fastapi import FastAPI
- 
--from backend.engine import get_engine
-+from ..engine import get_engine
- 
- from ._routes import define_routes
- 
-diff --git a/backend/api/_auth.py b/backend/api/_auth.py
-index f6ba81a..2f4dd93 100644
---- a/backend/api/_auth.py
-+++ b/backend/api/_auth.py
-@@ -8,7 +8,7 @@ from passlib.context import CryptContext
- from sqlalchemy import Engine, select
- from sqlalchemy.orm import Session
- 
--from backend.model import User
+diff --git a/backend/api/_game.py b/backend/api/_game.py
+index e69de29..3fb9345 100644
+--- a/backend/api/_game.py
++++ b/backend/api/_game.py
+@@ -0,0 +1,98 @@
++from fastapi import APIRouter, Depends, HTTPException, Response, status
++
++from ._deps import get_authenticated_user, get_game_service
 +from ..model import User
- 
- 
- SECRET_KEY = os.getenv("TICTACTOE_SECRET_KEY", "test_key")
++from ..schema import GameCreateRequest, GameOut, MoveResult
++from ..service import GameService
++
++
++router = APIRouter(prefix="/games", tags=["games"])
++
++
++@router.post(
++    "",
++    response_model=GameOut,
++    status_code=status.HTTP_201_CREATED,
++    summary="Create a new game",
++)
++def create_game(
++    payload: GameCreateRequest,
++    service: GameService = Depends(get_game_service),
++    user: User = Depends(get_authenticated_user),
++) -> GameOut:
++    try:
++        return service.create_game(
++            creator_user_name=user.user_name,
++            opponent_user_name=payload.opponent_user_name,
++        )
++    except ValueError as exc:
++        raise HTTPException(status_code=400, detail=str(exc)) from exc
++
++
++@router.get(
++    "",
++    response_model=list[GameOut],
++    summary="Retrieve all games",
++)
++def list_games(
++    service: GameService = Depends(get_game_service),
++    _: User = Depends(get_authenticated_user),
++) -> list[GameOut]:
++    return service.list_games()
++
++
++@router.get(
++    "/{game_id}",
++    response_model=GameOut,
++    summary="Retrieve one game with move history",
++)
++def get_game(
++    game_id: int,
++    service: GameService = Depends(get_game_service),
++    _: User = Depends(get_authenticated_user),
++) -> GameOut:
++    try:
++        return service.get_game(game_id)
++    except LookupError as exc:
++        raise HTTPException(status_code=404, detail=str(exc)) from exc
++
++
++@router.put(
++    "/{game_id}/move/{position}",
++    response_model=MoveResult,
++    summary="Make a move at position 1-9",
++)
++def make_move(
++    game_id: int,
++    position: int,
++    service: GameService = Depends(get_game_service),
++    user: User = Depends(get_authenticated_user),
++) -> MoveResult:
++    try:
++        game = service.make_move(game_id=game_id, user_name=user.user_name, position=position)
++        return MoveResult(game=game, message="Move accepted")
++    except LookupError as exc:
++        raise HTTPException(status_code=404, detail=str(exc)) from exc
++    except PermissionError as exc:
++        raise HTTPException(status_code=403, detail=str(exc)) from exc
++    except ValueError as exc:
++        raise HTTPException(status_code=400, detail=str(exc)) from exc
++
++
++@router.delete(
++    "/{game_id}",
++    status_code=status.HTTP_204_NO_CONTENT,
++    summary="Delete a completed game",
++)
++def delete_finished_game(
++    game_id: int,
++    service: GameService = Depends(get_game_service),
++    _: User = Depends(get_authenticated_user),
++) -> Response:
++    try:
++        service.delete_finished_game(game_id)
++    except LookupError as exc:
++        raise HTTPException(status_code=404, detail=str(exc)) from exc
++    except ValueError as exc:
++        raise HTTPException(status_code=400, detail=str(exc)) from exc
++    return Response(status_code=status.HTTP_204_NO_CONTENT)
 diff --git a/backend/api/_routes.py b/backend/api/_routes.py
-index 2db976f..bfe7310 100644
+index bfe7310..b10cacb 100644
 --- a/backend/api/_routes.py
 +++ b/backend/api/_routes.py
-@@ -3,9 +3,9 @@ from fastapi.security import OAuth2PasswordBearer
- from sqlalchemy import Engine, select
- from sqlalchemy.orm import Session
+@@ -1,170 +1,11 @@
+-from fastapi import Depends, FastAPI, HTTPException, Response, status
+-from fastapi.security import OAuth2PasswordBearer
+-from sqlalchemy import Engine, select
+-from sqlalchemy.orm import Session
++from fastapi import FastAPI
  
--from backend.api._auth import authenticate_user, create_access_token, get_current_user, hash_password
--from backend.model import Entity, Person, User
--from backend.schema import (
-+from ._auth import authenticate_user, create_access_token, get_current_user, hash_password
-+from ..model import Entity, Person, User
-+from ..schema import (
-     GameCreateRequest,
-     GameOut,
-     LoginRequest,
-@@ -13,7 +13,7 @@ from backend.schema import (
-     RegisterRequest,
-     TokenResponse,
- )
--from backend.service import GameService
-+from ..service import GameService
+-from ._auth import authenticate_user, create_access_token, get_current_user, hash_password
+-from ..model import Entity, Person, User
+-from ..schema import (
+-    GameCreateRequest,
+-    GameOut,
+-    LoginRequest,
+-    MoveResult,
+-    RegisterRequest,
+-    TokenResponse,
+-)
+-from ..service import GameService
++from ._auth_routes import router as auth_router
++from ._game import router as game_router
++from ._health_routes import router as health_router
  
  
  def define_routes(app: FastAPI) -> None:
-diff --git a/backend/crud/_crud.py b/backend/crud/_crud.py
-index d74982c..3f19f38 100644
---- a/backend/crud/_crud.py
-+++ b/backend/crud/_crud.py
-@@ -1,8 +1,8 @@
- from sqlalchemy import Engine
- from sqlalchemy.orm import Session
- 
--from backend.model import Entity, Person, User
--from backend.schema import EntityBase
-+from ..model import Entity, Person, User
-+from ..schema import EntityBase
- 
- 
- class Crud:
-diff --git a/backend/crud/_game.py b/backend/crud/_game.py
-index 1930c4c..b6fa112 100644
---- a/backend/crud/_game.py
-+++ b/backend/crud/_game.py
-@@ -3,7 +3,7 @@ from collections.abc import Sequence
- from sqlalchemy import Engine, select
- from sqlalchemy.orm import Session, selectinload
- 
--from backend.model import Game, GameStatus, Move, User
-+from ..model import Game, GameStatus, Move, User
- 
- 
- class GameCRUD:
-diff --git a/backend/engine/__init__.py b/backend/engine/__init__.py
-index 145ebdd..7543cff 100644
---- a/backend/engine/__init__.py
-+++ b/backend/engine/__init__.py
-@@ -1,7 +1,7 @@
- from sqlalchemy import Engine, create_engine
- 
--from backend.config import Config
--from backend.model import Base
-+from ..config import Config
-+from ..model import Base
- 
- 
- def get_engine(config_file: str = "") -> Engine:
-diff --git a/backend/service/_game.py b/backend/service/_game.py
-index 53aec5c..7a3be24 100644
---- a/backend/service/_game.py
-+++ b/backend/service/_game.py
-@@ -1,8 +1,8 @@
- from sqlalchemy import Engine
- 
--from backend.crud import GameCRUD
--from backend.model import Game
--from backend.schema import GameOut, MoveOut
-+from ..crud import GameCRUD
-+from ..model import Game
-+from ..schema import GameOut, MoveOut
- 
- 
- class GameService:
-diff --git a/backend/utils/_user.py b/backend/utils/_user.py
-index c18f95d..22301df 100644
---- a/backend/utils/_user.py
-+++ b/backend/utils/_user.py
-@@ -3,8 +3,8 @@ import sys
- 
- from sqlalchemy.orm import Session
- 
--from backend.engine import get_engine
--from backend.model import Entity, Person, User
-+from ..engine import get_engine
-+from ..model import Entity, Person, User
- 
- 
- def user_main():
+-    oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
+-
+-    def get_engine() -> Engine:
+-        return app.state.engine
+-
+-    def get_game_service(engine: Engine = Depends(get_engine)) -> GameService:
+-        return GameService(engine=engine)
+-
+-    def get_authenticated_user(
+-        token: str = Depends(oauth2_scheme),
+-        engine: Engine = Depends(get_engine),
+-    ) -> User:
+-        return get_current_user(token=token, engine=engine)
+-
+-    @app.get("/", tags=["health"], summary="Health check")
+-    def get_root() -> dict[str, str]:
+-        return {"status": "ok"}
+-
+-    @app.post(
+-        "/auth/register",
+-        response_model=TokenResponse,
+-        status_code=status.HTTP_201_CREATED,
+-        tags=["auth"],
+-        summary="Register a new user",
+-    )
+-    def register_user(payload: RegisterRequest, engine: Engine = Depends(get_engine)) -> TokenResponse:
+-        with Session(engine) as session:
+-            existing = session.scalars(select(User).where(User.user_name == payload.user_name)).first()
+-            if existing is not None:
+-                raise HTTPException(status_code=409, detail="Username already exists")
+-
+-            if payload.first_name:
+-                entity = Person(name=payload.name, first_name=payload.first_name)
+-            else:
+-                entity = Entity(name=payload.name)
+-
+-            user = User(
+-                user_name=payload.user_name,
+-                password_hash=hash_password(payload.password),
+-                entity=entity,
+-            )
+-            session.add(entity)
+-            session.add(user)
+-            session.commit()
+-
+-        token = create_access_token(subject=payload.user_name)
+-        return TokenResponse(access_token=token)
+-
+-    @app.post(
+-        "/auth/token",
+-        response_model=TokenResponse,
+-        tags=["auth"],
+-        summary="Log in and receive JWT token",
+-    )
+-    def login(payload: LoginRequest, engine: Engine = Depends(get_engine)) -> TokenResponse:
+-        user = authenticate_user(engine=engine, user_name=payload.user_name, password=payload.password)
+-        if user is None:
+-            raise HTTPException(status_code=401, detail="Invalid username or password")
+-        token = create_access_token(subject=user.user_name)
+-        return TokenResponse(access_token=token)
+-
+-    @app.post(
+-        "/games",
+-        response_model=GameOut,
+-        status_code=status.HTTP_201_CREATED,
+-        tags=["games"],
+-        summary="Create a new game",
+-    )
+-    def create_game(
+-        payload: GameCreateRequest,
+-        service: GameService = Depends(get_game_service),
+-        user: User = Depends(get_authenticated_user),
+-    ) -> GameOut:
+-        print(f"Creating game: {payload} for user: {user.user_name}")
+-        try:
+-            return service.create_game(
+-                creator_user_name=user.user_name,
+-                opponent_user_name=payload.opponent_user_name,
+-            )
+-        except ValueError as exc:
+-            print(f"Error creating game: {exc}")
+-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+-
+-    @app.get(
+-        "/games",
+-        response_model=list[GameOut],
+-        tags=["games"],
+-        summary="Retrieve all games",
+-    )
+-    def list_games(
+-        service: GameService = Depends(get_game_service),
+-        _: User = Depends(get_authenticated_user),
+-    ) -> list[GameOut]:
+-        return service.list_games()
+-
+-    @app.get(
+-        "/games/{game_id}",
+-        response_model=GameOut,
+-        tags=["games"],
+-        summary="Retrieve one game with move history",
+-    )
+-    def get_game(
+-        game_id: int,
+-        service: GameService = Depends(get_game_service),
+-        _: User = Depends(get_authenticated_user),
+-    ) -> GameOut:
+-        try:
+-            return service.get_game(game_id)
+-        except LookupError as exc:
+-            raise HTTPException(status_code=404, detail=str(exc)) from exc
+-
+-    @app.put(
+-        "/games/{game_id}/move/{position}",
+-        response_model=MoveResult,
+-        tags=["games"],
+-        summary="Make a move at position 1-9",
+-    )
+-    def make_move(
+-        game_id: int,
+-        position: int,
+-        service: GameService = Depends(get_game_service),
+-        user: User = Depends(get_authenticated_user),
+-    ) -> MoveResult:
+-        try:
+-            game = service.make_move(game_id=game_id, user_name=user.user_name, position=position)
+-            return MoveResult(game=game, message="Move accepted")
+-        except LookupError as exc:
+-            raise HTTPException(status_code=404, detail=str(exc)) from exc
+-        except PermissionError as exc:
+-            raise HTTPException(status_code=403, detail=str(exc)) from exc
+-        except ValueError as exc:
+-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+-
+-    @app.delete(
+-        "/games/{game_id}",
+-        status_code=status.HTTP_204_NO_CONTENT,
+-        tags=["games"],
+-        summary="Delete a completed game",
+-    )
+-    def delete_finished_game(
+-        game_id: int,
+-        service: GameService = Depends(get_game_service),
+-        _: User = Depends(get_authenticated_user),
+-    ) -> Response:
+-        try:
+-            service.delete_finished_game(game_id)
+-        except LookupError as exc:
+-            raise HTTPException(status_code=404, detail=str(exc)) from exc
+-        except ValueError as exc:
+-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+-        return Response(status_code=status.HTTP_204_NO_CONTENT)
++    app.include_router(health_router)
++    app.include_router(auth_router)
++    app.include_router(game_router)
+diff --git a/diff.txt b/diff.txt
+index fbcf8f4..d3e311f 100644
+--- a/diff.txt
++++ b/diff.txt
+@@ -1,125 +0,0 @@
+-diff --git a/backend/api/_app.py b/backend/api/_app.py
+-index 12d3075..f0c88a7 100644
+---- a/backend/api/_app.py
+-+++ b/backend/api/_app.py
+-@@ -2,7 +2,7 @@ import os
+- 
+- from fastapi import FastAPI
+- 
+--from backend.engine import get_engine
+-+from ..engine import get_engine
+- 
+- from ._routes import define_routes
+- 
+-diff --git a/backend/api/_auth.py b/backend/api/_auth.py
+-index f6ba81a..2f4dd93 100644
+---- a/backend/api/_auth.py
+-+++ b/backend/api/_auth.py
+-@@ -8,7 +8,7 @@ from passlib.context import CryptContext
+- from sqlalchemy import Engine, select
+- from sqlalchemy.orm import Session
+- 
+--from backend.model import User
+-+from ..model import User
+- 
+- 
+- SECRET_KEY = os.getenv("TICTACTOE_SECRET_KEY", "test_key")
+-diff --git a/backend/api/_routes.py b/backend/api/_routes.py
+-index 2db976f..bfe7310 100644
+---- a/backend/api/_routes.py
+-+++ b/backend/api/_routes.py
+-@@ -3,9 +3,9 @@ from fastapi.security import OAuth2PasswordBearer
+- from sqlalchemy import Engine, select
+- from sqlalchemy.orm import Session
+- 
+--from backend.api._auth import authenticate_user, create_access_token, get_current_user, hash_password
+--from backend.model import Entity, Person, User
+--from backend.schema import (
+-+from ._auth import authenticate_user, create_access_token, get_current_user, hash_password
+-+from ..model import Entity, Person, User
+-+from ..schema import (
+-     GameCreateRequest,
+-     GameOut,
+-     LoginRequest,
+-@@ -13,7 +13,7 @@ from backend.schema import (
+-     RegisterRequest,
+-     TokenResponse,
+- )
+--from backend.service import GameService
+-+from ..service import GameService
+- 
+- 
+- def define_routes(app: FastAPI) -> None:
+-diff --git a/backend/crud/_crud.py b/backend/crud/_crud.py
+-index d74982c..3f19f38 100644
+---- a/backend/crud/_crud.py
+-+++ b/backend/crud/_crud.py
+-@@ -1,8 +1,8 @@
+- from sqlalchemy import Engine
+- from sqlalchemy.orm import Session
+- 
+--from backend.model import Entity, Person, User
+--from backend.schema import EntityBase
+-+from ..model import Entity, Person, User
+-+from ..schema import EntityBase
+- 
+- 
+- class Crud:
+-diff --git a/backend/crud/_game.py b/backend/crud/_game.py
+-index 1930c4c..b6fa112 100644
+---- a/backend/crud/_game.py
+-+++ b/backend/crud/_game.py
+-@@ -3,7 +3,7 @@ from collections.abc import Sequence
+- from sqlalchemy import Engine, select
+- from sqlalchemy.orm import Session, selectinload
+- 
+--from backend.model import Game, GameStatus, Move, User
+-+from ..model import Game, GameStatus, Move, User
+- 
+- 
+- class GameCRUD:
+-diff --git a/backend/engine/__init__.py b/backend/engine/__init__.py
+-index 145ebdd..7543cff 100644
+---- a/backend/engine/__init__.py
+-+++ b/backend/engine/__init__.py
+-@@ -1,7 +1,7 @@
+- from sqlalchemy import Engine, create_engine
+- 
+--from backend.config import Config
+--from backend.model import Base
+-+from ..config import Config
+-+from ..model import Base
+- 
+- 
+- def get_engine(config_file: str = "") -> Engine:
+-diff --git a/backend/service/_game.py b/backend/service/_game.py
+-index 53aec5c..7a3be24 100644
+---- a/backend/service/_game.py
+-+++ b/backend/service/_game.py
+-@@ -1,8 +1,8 @@
+- from sqlalchemy import Engine
+- 
+--from backend.crud import GameCRUD
+--from backend.model import Game
+--from backend.schema import GameOut, MoveOut
+-+from ..crud import GameCRUD
+-+from ..model import Game
+-+from ..schema import GameOut, MoveOut
+- 
+- 
+- class GameService:
+-diff --git a/backend/utils/_user.py b/backend/utils/_user.py
+-index c18f95d..22301df 100644
+---- a/backend/utils/_user.py
+-+++ b/backend/utils/_user.py
+-@@ -3,8 +3,8 @@ import sys
+- 
+- from sqlalchemy.orm import Session
+- 
+--from backend.engine import get_engine
+--from backend.model import Entity, Person, User
+-+from ..engine import get_engine
+-+from ..model import Entity, Person, User
+- 
+- 
+- def user_main():
