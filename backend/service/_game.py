@@ -1,8 +1,8 @@
 from sqlalchemy import Engine
 
-from backend.crud import GameCRUD
-from backend.model import Game
-from backend.schema import GameOut, MoveOut
+from ..crud import GameCRUD
+from ..model import Game
+from ..schema import GameOut, MoveOut
 
 
 class GameService:

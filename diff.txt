@@ -1,0 +1,125 @@
+diff --git a/backend/api/_app.py b/backend/api/_app.py
+index 12d3075..f0c88a7 100644
+--- a/backend/api/_app.py
++++ b/backend/api/_app.py
+@@ -2,7 +2,7 @@ import os
+ 
+ from fastapi import FastAPI
+ 
+-from backend.engine import get_engine
++from ..engine import get_engine
+ 
+ from ._routes import define_routes
+ 
+diff --git a/backend/api/_auth.py b/backend/api/_auth.py
+index f6ba81a..2f4dd93 100644
+--- a/backend/api/_auth.py
++++ b/backend/api/_auth.py
+@@ -8,7 +8,7 @@ from passlib.context import CryptContext
+ from sqlalchemy import Engine, select
+ from sqlalchemy.orm import Session
+ 
+-from backend.model import User
++from ..model import User
+ 
+ 
+ SECRET_KEY = os.getenv("TICTACTOE_SECRET_KEY", "test_key")
+diff --git a/backend/api/_routes.py b/backend/api/_routes.py
+index 2db976f..bfe7310 100644
+--- a/backend/api/_routes.py
++++ b/backend/api/_routes.py
+@@ -3,9 +3,9 @@ from fastapi.security import OAuth2PasswordBearer
+ from sqlalchemy import Engine, select
+ from sqlalchemy.orm import Session
+ 
+-from backend.api._auth import authenticate_user, create_access_token, get_current_user, hash_password
+-from backend.model import Entity, Person, User
+-from backend.schema import (
++from ._auth import authenticate_user, create_access_token, get_current_user, hash_password
++from ..model import Entity, Person, User
++from ..schema import (
+     GameCreateRequest,
+     GameOut,
+     LoginRequest,
+@@ -13,7 +13,7 @@ from backend.schema import (
+     RegisterRequest,
+     TokenResponse,
+ )
+-from backend.service import GameService
++from ..service import GameService
+ 
+ 
+ def define_routes(app: FastAPI) -> None:
+diff --git a/backend/crud/_crud.py b/backend/crud/_crud.py
+index d74982c..3f19f38 100644
+--- a/backend/crud/_crud.py
++++ b/backend/crud/_crud.py
+@@ -1,8 +1,8 @@
+ from sqlalchemy import Engine
+ from sqlalchemy.orm import Session
+ 
+-from backend.model import Entity, Person, User
+-from backend.schema import EntityBase
++from ..model import Entity, Person, User
++from ..schema import EntityBase
+ 
+ 
+ class Crud:
+diff --git a/backend/crud/_game.py b/backend/crud/_game.py
+index 1930c4c..b6fa112 100644
+--- a/backend/crud/_game.py
++++ b/backend/crud/_game.py
+@@ -3,7 +3,7 @@ from collections.abc import Sequence
+ from sqlalchemy import Engine, select
+ from sqlalchemy.orm import Session, selectinload
+ 
+-from backend.model import Game, GameStatus, Move, User
++from ..model import Game, GameStatus, Move, User
+ 
+ 
+ class GameCRUD:
+diff --git a/backend/engine/__init__.py b/backend/engine/__init__.py
+index 145ebdd..7543cff 100644
+--- a/backend/engine/__init__.py
++++ b/backend/engine/__init__.py
+@@ -1,7 +1,7 @@
+ from sqlalchemy import Engine, create_engine
+ 
+-from backend.config import Config
+-from backend.model import Base
++from ..config import Config
++from ..model import Base
+ 
+ 
+ def get_engine(config_file: str = "") -> Engine:
+diff --git a/backend/service/_game.py b/backend/service/_game.py
+index 53aec5c..7a3be24 100644
+--- a/backend/service/_game.py
++++ b/backend/service/_game.py
+@@ -1,8 +1,8 @@
+ from sqlalchemy import Engine
+ 
+-from backend.crud import GameCRUD
+-from backend.model import Game
+-from backend.schema import GameOut, MoveOut
++from ..crud import GameCRUD
++from ..model import Game
++from ..schema import GameOut, MoveOut
+ 
+ 
+ class GameService:
+diff --git a/backend/utils/_user.py b/backend/utils/_user.py
+index c18f95d..22301df 100644
+--- a/backend/utils/_user.py
++++ b/backend/utils/_user.py
+@@ -3,8 +3,8 @@ import sys
+ 
+ from sqlalchemy.orm import Session
+ 
+-from backend.engine import get_engine
+-from backend.model import Entity, Person, User
++from ..engine import get_engine
++from ..model import Entity, Person, User
+ 
+ 
+ def user_main():

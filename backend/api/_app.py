@@ -2,7 +2,7 @@ import os
 
 from fastapi import FastAPI
 
-from backend.engine import get_engine
+from ..engine import get_engine
 
 from ._routes import define_routes
 

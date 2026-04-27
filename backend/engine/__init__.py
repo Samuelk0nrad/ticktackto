@@ -1,7 +1,7 @@
 from sqlalchemy import Engine, create_engine
 
-from backend.config import Config
-from backend.model import Base
+from ..config import Config
+from ..model import Base
 
 
 def get_engine(config_file: str = "") -> Engine:

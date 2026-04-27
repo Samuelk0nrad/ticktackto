@@ -3,8 +3,8 @@ import sys
 
 from sqlalchemy.orm import Session
 
-from backend.engine import get_engine
-from backend.model import Entity, Person, User
+from ..engine import get_engine
+from ..model import Entity, Person, User
 
 
 def user_main():

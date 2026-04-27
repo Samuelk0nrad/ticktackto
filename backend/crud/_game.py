@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session, selectinload
 
-from backend.model import Game, GameStatus, Move, User
+from ..model import Game, GameStatus, Move, User
 
 
 class GameCRUD:

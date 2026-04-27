@@ -8,7 +8,7 @@ from passlib.context import CryptContext
 from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
 
-from backend.model import User
+from ..model import User
 
 
 SECRET_KEY = os.getenv("TICTACTOE_SECRET_KEY", "test_key")

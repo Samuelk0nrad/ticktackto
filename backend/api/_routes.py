@@ -3,9 +3,9 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
 
-from backend.api._auth import authenticate_user, create_access_token, get_current_user, hash_password
-from backend.model import Entity, Person, User
-from backend.schema import (
+from ._auth import authenticate_user, create_access_token, get_current_user, hash_password
+from ..model import Entity, Person, User
+from ..schema import (
     GameCreateRequest,
     GameOut,
     LoginRequest,
@@ -13,7 +13,7 @@ from backend.schema import (
     RegisterRequest,
     TokenResponse,
 )
-from backend.service import GameService
+from ..service import GameService
 
 
 def define_routes(app: FastAPI) -> None:
