@@ -9,6 +9,7 @@ class Config:
     DB_CONNECTION_STRING: str = "sqlite:///:memory:"
 
     __instances: dict[str, Config] = {}
+    _connection_string=""
 
     def __init__(self, file_name: str = ""):
         if str in Config.__instances:

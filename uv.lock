@@ -67,6 +67,7 @@ lint = [
     { name = "vulture" },
 ]
 test = [
+    { name = "httpx" },
     { name = "pytest" },
 ]
 vim = [
@@ -80,6 +81,7 @@ requires-dist = [
     { name = "black", marker = "extra == 'lint'" },
     { name = "codespell", marker = "extra == 'lint'", specifier = ">=2.2.4" },
     { name = "fastapi", specifier = ">=0.120" },
+    { name = "httpx", marker = "extra == 'test'" },
     { name = "isort", marker = "extra == 'lint'" },
     { name = "ollama", marker = "extra == 'vim'" },
     { name = "passlib", extras = ["bcrypt"], specifier = ">=1.7" },
