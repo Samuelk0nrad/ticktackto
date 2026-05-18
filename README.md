@@ -79,7 +79,7 @@ Authorization: Bearer <token>
 Install dependencies in your environment and run the API:
 
 ```bash
-uvicorn backend.main:app --reload
+TICTACTOE_CONFIG_FILE=local_sqlite_config.json uv run uvicorn backend.main:app
 ```
 
 Open docs:
