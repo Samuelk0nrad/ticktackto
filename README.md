@@ -82,6 +82,9 @@ Install dependencies in your environment and run the API:
 TICTACTOE_CONFIG_FILE=local_sqlite_config.json uv run uvicorn backend.main:app
 ```
 
+```bash
+$env:TICTACTOE_CONFIG_FILE="local_sqlite_config.json"; uv run uvicorn backend.main:app
+```
 Open docs:
 
 - Swagger UI: `http://127.0.0.1:8000/docs`
